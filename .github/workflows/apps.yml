@@ -26,12 +26,16 @@ jobs:
         with: { node-version: 22 }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
-      - run: |
+      - env: { KS_PW: "${{ secrets.KEYSTORE_PASSWORD }}" }
+        run: |
           npm install && npm run build
           npx cap add android
           sed -i 's#</manifest>#<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
-          cd android && ./gradlew assembleDebug
-          mv app/build/outputs/apk/debug/app-debug.apk ../MonChat.apk
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          cd android && ./gradlew assembleRelease
+          BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          $BT/zipalign -f 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $BT/apksigner sign --ks ../monchat.keystore --ks-pass env:KS_PW --out ../MonChat.apk aligned.apk
       - uses: actions/upload-artifact@v4
         with: { name: android, path: MonChat.apk }
 
@@ -46,4 +50,3 @@ jobs:
           tag_name: beta-${{ github.run_number }}
           name: Bêta n°${{ github.run_number }}
           files: out/*
-          
