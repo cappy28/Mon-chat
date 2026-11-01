@@ -1,7 +1,7 @@
 {
   "name": "monchat",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": { "dev": "vite", "build": "vite build" },
   "dependencies": {
@@ -10,7 +10,10 @@
     "trystero": "0.21",
     "idb-keyval": "^6.2.1",
     "@capacitor/core": "^7.0.0",
-    "@capacitor/android": "^7.0.0"
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/share": "^7.0.0"
   },
   "devDependencies": {
     "vite": "^7.0.0",
