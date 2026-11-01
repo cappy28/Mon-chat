@@ -1,0 +1,21 @@
+name: Créer la clé Android (une seule fois)
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env: { KS_PW: "${{ secrets.KEYSTORE_PASSWORD }}" }
+        run: |
+          if [ -f monchat.keystore ]; then echo "La clé existe déjà, rien à faire"; exit 1; fi
+          if [ ${#KS_PW} -lt 12 ]; then echo "KEYSTORE_PASSWORD absent ou trop court (12 caractères min)"; exit 1; fi
+          keytool -genkeypair -keystore monchat.keystore -storetype PKCS12 -alias monchat \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$KS_PW" -keypass "$KS_PW" -dname "CN=MonChat"
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add monchat.keystore
+          git commit -m "Clé de signature Android"
+          git push
+          
