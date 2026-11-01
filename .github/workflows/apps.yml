@@ -13,7 +13,8 @@ jobs:
       - shell: bash
         run: |
           npm install
-          npx tauri init --ci -A MonChat -W MonChat -D ../dist -P http://localhost:5173 --before-dev-command "npm run dev" --before-build-command "npm run build"
+          npx tauri init --ci -A Ruche -W Ruche -D ../dist -P http://localhost:5173 --before-dev-command "npm run dev" --before-build-command "npm run build"
+          npx tauri icon public/icon.svg
           npx tauri build --config '{"identifier":"com.monchat.app"}'
       - uses: actions/upload-artifact@v4
         with: { name: windows, path: src-tauri/target/release/bundle/nsis/*.exe }
@@ -30,6 +31,7 @@ jobs:
         run: |
           npm install && npm run build
           npx cap add android
+          npx --yes @capacitor/assets@3 generate --android --iconBackgroundColor '#14111b' --iconBackgroundColorDark '#14111b' --splashBackgroundColor '#14111b' --splashBackgroundColorDark '#14111b'
           sed -i 's#</manifest>#<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n<uses-permission android:name="android.permission.CAMERA" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
           sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
           cd android && ./gradlew assembleRelease
