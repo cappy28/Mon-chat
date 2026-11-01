@@ -47,6 +47,7 @@ export const beep = () => {
 };
 
 export const notify = async (title, body) => {
+  if (localStorage.getItem('status') === 'dnd') return;   // Ne pas déranger
   beep();
   if (!document.hidden) return;
   try {
