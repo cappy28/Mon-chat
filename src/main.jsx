@@ -1,4 +1,11 @@
 import { createRoot } from 'react-dom/client';
-import App from './App.jsx';
 import './index.css';
-createRoot(document.getElementById('root')).render(<App />);
+
+const root = createRoot(document.getElementById('root'), {
+  onUncaughtError: (e) => window.showError(e),   // erreurs React
+});
+
+// Chargement séparé : si App.jsx ou Trystero plante, on voit l'erreur
+import('./App.jsx')
+  .then(({ default: App }) => root.render(<App />))
+  .catch((e) => window.showError(e));
