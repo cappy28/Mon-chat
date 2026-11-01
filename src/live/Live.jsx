@@ -7,6 +7,10 @@ import Ring from './Ring.jsx'
 import Stage from './Stage.jsx'
 import './live.css'
 import './live2.css'
+import './ruche.css'
+import Update from './Update.jsx'
+
+document.documentElement.classList.toggle('ruche', localStorage.skin !== '0')
 
 const rid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 
@@ -109,6 +113,7 @@ export default function Live() {
         onHang={hang} onAdd={add} onJoin={joined} people={people} />}
       {inc && !call && <Ring inc={inc} av={avOf(inc.from)} onOk={accept} onNo={refuse} />}
       {info && <div className="lv-info">{info}</div>}
+      <Update />
     </>
   )
          }
