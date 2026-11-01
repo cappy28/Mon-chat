@@ -1,9 +1,55 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 
 export default function Composer({ label, names, me, reply, onCancelReply, onSend, onFile, onTyping }) {
   const [text, setText] = useState('');
+  const [recStart, setRecStart] = useState(0);     // 0 = pas d'enregistrement
+  const [, tick] = useState(0);
   const last = useRef(0);
   const input = useRef();
+  const mr = useRef(null);
+
+  useEffect(() => {
+    if (!recStart) return;
+    const t = setInterval(() => tick(x => x + 1), 500);
+    return () => clearInterval(t);
+  }, [recStart]);
+
+  // Changement de salon pendant un enregistrement : on annule
+  useEffect(() => () => stopRec(false), []);
+
+  function stopRec(keep) {
+    const r = mr.current;
+    if (!r) return;
+    r.keep = keep;
+    mr.current = null;
+    setRecStart(0);
+    if (r.state !== 'inactive') r.stop();
+  }
+
+  const startRec = async () => {
+    if (mr.current) return;
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch { return alert('Micro refusé ou introuvable'); }
+    if (mr.current) return stream.getTracks().forEach(t => t.stop());
+    let r;
+    try { r = new MediaRecorder(stream); }
+    catch { stream.getTracks().forEach(t => t.stop()); return alert('Enregistrement non disponible ici'); }
+    const chunks = [];
+    r.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    r.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (!r.keep || !chunks.length) return;
+      const type = (r.mimeType || 'audio/webm').split(';')[0];
+      const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+      onFile(new File(chunks, `message-vocal.${ext}`, { type }));
+    };
+    r.start();
+    mr.current = r;
+    setRecStart(Date.now());
+  };
 
   // Suggestions quand on tape @...
   const m = text.match(/@([^\s@]*)$/);
@@ -25,6 +71,8 @@ export default function Composer({ label, names, me, reply, onCancelReply, onSen
     last.current = 0;
   };
 
+  const secs = recStart ? Math.max(0, Math.floor((Date.now() - recStart) / 1000)) : 0;
+
   return (
     <div>
       {sugg.length > 0 && (
@@ -33,17 +81,27 @@ export default function Composer({ label, names, me, reply, onCancelReply, onSen
       {reply && (
         <div className="replying">↩️ Réponse à <b>{reply.u}</b> <span onClick={onCancelReply}>✕</span></div>
       )}
-      <form onSubmit={submit} className="composer">
-        <label className="attach">📎
-          <input type="file" hidden onChange={e => {
-            const f = e.target.files[0];
-            e.target.value = '';
-            if (f) onFile(f);
-          }} />
-        </label>
-        <input ref={input} value={text} onChange={change} placeholder={`Écrire dans ${label}`} />
-      </form>
+      {recStart ? (
+        <div className="composer rec">
+          <span className="t">🔴 Enregistrement… {fmt(secs)}</span>
+          <button type="button" className="mini ghost" onClick={() => stopRec(false)}>✕</button>
+          <button type="button" className="mini" onClick={() => stopRec(true)}>➤</button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="composer">
+          <label className="attach">📎
+            <input type="file" hidden onChange={e => {
+              const f = e.target.files[0];
+              e.target.value = '';
+              if (f) onFile(f);
+            }} />
+          </label>
+          <input ref={input} value={text} onChange={change} placeholder={`Écrire dans ${label}`} />
+          {text.trim()
+            ? <button className="mini">➤</button>
+            : <button type="button" className="mini ghost" onClick={startRec}>🎤</button>}
+        </form>
+      )}
     </div>
   );
-           }
-    
+}
