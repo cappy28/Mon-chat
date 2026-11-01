@@ -4,9 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MonChat</title>
+    <script>
+      // Affiche n'importe quelle erreur à l'écran (même si React ne démarre pas)
+      window.showError = function (e) {
+        var pre = document.createElement('pre');
+        pre.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:60vh;overflow:auto;margin:0;padding:12px;background:#1e1f22;color:#f23f42;font-size:12px;white-space:pre-wrap;z-index:99999';
+        pre.textContent = '⚠️ ' + ((e && (e.stack || e.message)) || e);
+        (document.body || document.documentElement).appendChild(pre);
+      };
+      window.addEventListener('error', function (e) {
+        if (e.target && e.target !== window) showError('Fichier introuvable : ' + (e.target.src || e.target.href));
+        else showError(e.error || e.message);
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) { showError(e.reason); });
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="background:#313338;color:#dbdee1;font-family:system-ui">
+    <div id="root">Chargement…</div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
