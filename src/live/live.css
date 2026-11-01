@@ -1,0 +1,72 @@
+/* Ruche · couche appels (1/2) : bases, bouton flottant, sonnerie */
+:root {
+  --r-ink: #14111b; --r-ink2: #1e1928; --r-ink3: #2a2337;
+  --r-miel: #ffb627; --r-orange: #ff7a1a; --r-menthe: #2fd690; --r-corail: #ff4d5e;
+  --r-txt: #f4effa; --r-mut: #a99fba;
+  --r-grad: linear-gradient(135deg, var(--r-miel), var(--r-orange));
+}
+.lv-face {
+  position: relative; display: inline-grid; place-items: center; flex: none;
+  width: 34px; height: 34px; border-radius: 11px; color: #fff; font-weight: 700;
+}
+.lv-face img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.lv-face.big { width: 96px; height: 96px; border-radius: 30px; font-size: 40px; }
+.lv-st {
+  position: absolute; right: -3px; bottom: -3px; width: 11px; height: 11px;
+  border-radius: 4px; border: 3px solid var(--r-ink2); background: var(--r-menthe);
+}
+.lv-st.idle { background: var(--r-miel); }
+.lv-st.dnd { background: var(--r-corail); }
+.lv-muted { color: var(--r-mut); font-size: 13px; margin: 6px 0; }
+
+.lv-fab {
+  position: fixed; z-index: 900; width: 56px; height: 56px; border: 0; border-radius: 18px;
+  background: var(--r-ink); box-shadow: 0 6px 24px #0008, 0 0 0 2px var(--r-miel);
+  display: grid; place-items: center; cursor: grab; touch-action: none;
+}
+.lv-badge {
+  position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 7px; background: var(--r-menthe); color: var(--r-ink); font: 700 12px/20px sans-serif;
+}
+.lv-panel {
+  position: fixed; z-index: 901; width: 290px; max-height: 60vh; overflow: auto; padding: 12px;
+  background: var(--r-ink2); color: var(--r-txt); border-radius: 20px; box-shadow: 0 10px 40px #000a;
+}
+.lv-panel h3 { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; font-size: 15px; }
+.lv-row { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 12px; }
+.lv-row:hover { background: var(--r-ink3); }
+.lv-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-row button { border: 0; background: var(--r-ink3); border-radius: 10px; padding: 6px 8px; cursor: pointer; }
+.lv-wide {
+  display: block; width: 100%; margin-top: 8px; padding: 10px; border: 0; border-radius: 12px;
+  background: var(--r-grad); color: var(--r-ink); font-weight: 700; cursor: pointer;
+}
+
+.lv-ring {
+  position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; color: var(--r-txt); text-align: center;
+  background: radial-gradient(circle at 50% 35%, #3a2a10, var(--r-ink) 65%);
+}
+.lv-ring h2 { margin: 18px 0 0; font-size: 28px; }
+.lv-ring-av { animation: lv-pulse 1.4s infinite; border-radius: 30px; }
+@keyframes lv-pulse {
+  0% { box-shadow: 0 0 0 0 #ffb627aa; }
+  100% { box-shadow: 0 0 0 36px #ffb62700; }
+}
+.lv-ring-btns { display: flex; gap: 28px; margin-top: 40px; }
+.lv-ring-btns button {
+  width: 72px; height: 72px; border: 0; border-radius: 24px; font-size: 28px; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;
+}
+.lv-ring-btns small { font-size: 11px; margin-top: 2px; }
+.lv-ok { background: var(--r-menthe); }
+.lv-no { background: var(--r-corail); }
+
+.lv-info, .lv-toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 1001;
+  padding: 10px 16px; border-radius: 14px; background: var(--r-ink3); color: var(--r-txt);
+  box-shadow: 0 6px 24px #0008; max-width: 90vw;
+}
+.lv-info { bottom: 24px; }
+.lv-toast { top: 70px; border: 1px solid var(--r-miel); }
+            
