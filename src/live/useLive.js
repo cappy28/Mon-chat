@@ -1,10 +1,11 @@
-// Présence + sonnerie des appels (salle Trystero « live », séparée du chat)
+// Présence + profils + sonnerie des appels (salle Trystero « live »)
 import { useEffect, useRef, useState } from 'react'
 import { joinRoom } from 'trystero'
 import { CONFIG } from '../lib/util.js'
+import { myProfile, clean } from './profile.js'
 
 export function useLive(me) {
-  const [people, setPeople] = useState({}) // id réseau -> { n, av, st }
+  const [people, setPeople] = useState({}) // id réseau -> { n, av, st, bio, game, pron, ban }
   const api = useRef({})
 
   useEffect(() => {
@@ -12,7 +13,7 @@ export function useLive(me) {
     const room = joinRoom(CONFIG, 'live')
     const [sendHere, getHere] = room.makeAction('here')
     const [sendRing, getRing] = room.makeAction('ring')
-    const mine = () => ({ n: me, av: localStorage.avatar || '', st: localStorage.status || 'on' })
+    const mine = () => ({ n: me, av: localStorage.avatar || '', st: localStorage.status || 'on', ...myProfile() })
     let last = JSON.stringify(mine())
 
     sendHere(mine())
@@ -21,12 +22,13 @@ export function useLive(me) {
     getHere((d, id) => {
       if (!d || typeof d.n !== 'string') return
       const av = typeof d.av === 'string' && d.av.startsWith('data:image/') && d.av.length < 400000 ? d.av : ''
-      setPeople(p => ({ ...p, [id]: { n: d.n.slice(0, 40), av, st: String(d.st || 'on') } }))
+      const st = ['on', 'idle', 'dnd'].includes(d.st) ? d.st : 'on'
+      setPeople(p => ({ ...p, [id]: { n: d.n.slice(0, 40), av, st, ...clean(d) } }))
     })
     getRing((d, id) => api.current.onRing?.(d, id))
     api.current.sendRing = d => sendRing(d)
 
-    // Si tu changes de photo ou de statut, les autres sont prévenus
+    // Photo, statut ou profil modifié : les autres sont prévenus
     const t = setInterval(() => {
       const now = JSON.stringify(mine())
       if (now !== last) { last = now; sendHere(mine()) }
@@ -41,4 +43,4 @@ export function useLive(me) {
   }, [me])
 
   return { people, api }
-}
+                          }
