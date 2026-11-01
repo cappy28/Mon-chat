@@ -1,9 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { joinRoom } from 'trystero';
+import { get, set } from 'idb-keyval';
 
 // Le mot de passe chiffre la connexion : c'est votre "code d'invitation"
 const CONFIG = { appId: 'monchat-potes-2026', password: import.meta.env.VITE_ROOM_PASSWORD || 'change-moi' };
-const load = () => JSON.parse(localStorage.getItem('msgs') || '[]');
+const EMOJIS = ['👍', '😂', '❤️', '🔥', '😮', '😢'];
+
+// Réduit les images (1280 px max, JPEG) pour qu'elles s'envoient vite
+const compress = (file) => new Promise((ok, ko) => {
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * s);
+    cv.height = Math.round(img.height * s);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    URL.revokeObjectURL(img.src);
+    ok(cv.toDataURL('image/jpeg', 0.75));
+  };
+  img.onerror = ko;
+  img.src = URL.createObjectURL(file);
+});
 
 export default function App() {
   const [name, setName] = useState(localStorage.getItem('name'));
@@ -23,58 +40,108 @@ function Login({ onName }) {
 }
 
 function Chat({ name }) {
-  const [msgs, setMsgs] = useState(load);
+  const [recs, setRecs] = useState([]);
   const [peers, setPeers] = useState({});           // peerId -> pseudo
   const [channel, setChannel] = useState('général');
   const [extra, setExtra] = useState([]);
   const [text, setText] = useState('');
+  const [sel, setSel] = useState(null);             // message sélectionné
+  const store = useRef([]);
   const net = useRef({});
   const bottom = useRef();
 
-  // Fusionne les messages reçus sans doublons, puis sauvegarde
-  const merge = (incoming) => setMsgs(prev => {
-    const ids = new Set(prev.map(m => m.id));
-    const added = incoming.filter(m => m?.id && !ids.has(m.id));
-    if (!added.length) return prev;
-    const all = [...prev, ...added].sort((a, b) => a.t - b.t).slice(-2000);
-    localStorage.setItem('msgs', JSON.stringify(all));
-    return all;
-  });
+  // Messages, modifs, suppressions et réactions sont des "enregistrements" avec une version v.
+  // On garde toujours la plus récente : tout le monde finit avec la même chose.
+  const merge = (incoming) => {
+    const map = new Map(store.current.map(r => [r.id, r]));
+    let changed = false;
+    for (const r of incoming) {
+      if (!r?.id) continue;
+      const old = map.get(r.id);
+      if (old && (old.u !== r.u || (r.v || 0) <= (old.v || 0))) continue; // seul l'auteur peut modifier
+      map.set(r.id, r);
+      changed = true;
+    }
+    if (!changed) return;
+    const all = [...map.values()].sort((a, b) => a.t - b.t).slice(-3000);
+    store.current = all;
+    setRecs(all);
+    set('recs', all);
+  };
+
+  // Chargement de l'historique (et récupération de l'ancien stockage)
+  useEffect(() => {
+    get('recs').then(saved =>
+      merge(saved ?? JSON.parse(localStorage.getItem('msgs') || '[]').map(m => ({ ...m, v: m.t }))));
+  }, []);
 
   useEffect(() => {
     const room = joinRoom(CONFIG, 'serveur');
-    const [sendMsg, getMsg] = room.makeAction('msg');
+    const [sendRec, getRec] = room.makeAction('rec');
     const [sendHist, getHist] = room.makeAction('hist');
     const [sendHello, getHello] = room.makeAction('hello');
-    getMsg(m => merge([m]));
-    getHist(list => merge(list));                      // synchro de l'historique
+    getRec(r => merge([r]));
+    getHist(list => Array.isArray(list) && merge(list));
     getHello((n, id) => setPeers(p => ({ ...p, [id]: n })));
-    room.onPeerJoin(id => { sendHello(name, id); sendHist(load().slice(-500), id); });
+    room.onPeerJoin(id => { sendHello(name, id); sendHist(store.current.slice(-500), id); });
     room.onPeerLeave(id => setPeers(p => { const c = { ...p }; delete c[id]; return c; }));
-    net.current.sendMsg = sendMsg;
+    net.current.sendRec = sendRec;
     return () => room.leave();
   }, []);
 
-  useEffect(() => bottom.current?.scrollIntoView({ behavior: 'smooth' }), [msgs, channel]);
+  const publish = (r) => { merge([r]); net.current.sendRec?.(r); };
+  const now = () => Date.now();
 
   const send = (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
-    const m = { id: crypto.randomUUID(), c: channel, u: name, txt: text.trim().slice(0, 4000), t: Date.now() };
-    merge([m]);
-    net.current.sendMsg(m);
+    const txt = text.trim().slice(0, 4000);
+    if (!txt) return;
+    publish({ id: crypto.randomUUID(), c: channel, u: name, txt, t: now(), v: now() });
     setText('');
   };
 
-  const channels = [...new Set(['général', ...extra, ...msgs.map(m => m.c)])];
+  const sendImage = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const img = await compress(file);
+      publish({ id: crypto.randomUUID(), c: channel, u: name, txt: '', img, t: now(), v: now() });
+    } catch { alert('Image illisible'); }
+  };
+
+  const edit = (m) => {
+    const txt = prompt('Modifier le message', m.txt)?.trim();
+    if (txt && txt !== m.txt) publish({ ...m, txt: txt.slice(0, 4000), ed: true, v: now() });
+    setSel(null);
+  };
+
+  const remove = (m) => {
+    if (confirm('Supprimer ce message ?'))
+      publish({ id: m.id, c: m.c, u: m.u, t: m.t, del: true, v: now() });
+    setSel(null);
+  };
+
+  const react = (m, e) => {
+    const id = `r:${m.id}:${e}:${name}`;
+    const cur = store.current.find(r => r.id === id);
+    publish({ id, k: 'r', m: m.id, e, u: name, on: !cur?.on, t: now(), v: now() });
+  };
+
+  const messages = recs.filter(r => !r.k && !r.del && r.c === channel);
+  const reacts = {};                                  // messageId -> { emoji: [pseudos] }
+  for (const r of recs) if (r.k === 'r' && r.on) ((reacts[r.m] ??= {})[r.e] ??= []).push(r.u);
+  const channels = [...new Set(['général', ...extra, ...recs.filter(r => !r.k).map(r => r.c)])];
   const online = [name, ...Object.values(peers)];
+
+  useEffect(() => bottom.current?.scrollIntoView({ behavior: 'smooth' }), [messages.length, channel]);
 
   return (
     <div className="layout">
       <aside className="channels">
         <h3>Salons</h3>
         {channels.map(c => (
-          <div key={c} className={c === channel ? 'active' : ''} onClick={() => setChannel(c)}># {c}</div>
+          <div key={c} className={'ch' + (c === channel ? ' active' : '')} onClick={() => setChannel(c)}># {c}</div>
         ))}
         <button onClick={() => { const n = prompt('Nom du salon ?')?.trim().toLowerCase();
           if (n) { setExtra(x => [...x, n]); setChannel(n); } }}>+ Salon</button>
@@ -83,15 +150,36 @@ function Chat({ name }) {
       <main>
         <header># {channel}</header>
         <div className="messages">
-          {msgs.filter(m => m.c === channel).map(m => (
-            <div key={m.id} className="msg">
-              <b>{m.u}</b> <small>{new Date(m.t).toLocaleString()}</small>
-              <p>{m.txt}</p>
+          {messages.map(m => (
+            <div key={m.id} className={'msg' + (sel === m.id ? ' sel' : '')}
+              onClick={() => setSel(sel === m.id ? null : m.id)}>
+              <b>{m.u}</b> <small>{new Date(m.t).toLocaleString()}{m.ed && ' (modifié)'}</small>
+              {m.txt && <p>{m.txt}</p>}
+              {m.img && <img src={m.img} className="pic" alt=""
+                onClick={e => { e.stopPropagation(); e.target.requestFullscreen?.(); }} />}
+              {reacts[m.id] && (
+                <div className="reacts">
+                  {Object.entries(reacts[m.id]).map(([e, us]) => (
+                    <span key={e} title={us.join(', ')} className={us.includes(name) ? 'mine' : ''}
+                      onClick={ev => { ev.stopPropagation(); react(m, e); }}>{e} {us.length}</span>
+                  ))}
+                </div>
+              )}
+              {sel === m.id && (
+                <div className="bar" onClick={e => e.stopPropagation()}>
+                  {EMOJIS.map(e => <span key={e} onClick={() => react(m, e)}>{e}</span>)}
+                  {m.u === name && <>
+                    {m.txt && <span onClick={() => edit(m)}>✏️</span>}
+                    <span onClick={() => remove(m)}>🗑️</span>
+                  </>}
+                </div>
+              )}
             </div>
           ))}
           <div ref={bottom} />
         </div>
-        <form onSubmit={send}>
+        <form onSubmit={send} className="composer">
+          <label className="attach">🖼️<input type="file" accept="image/*" hidden onChange={sendImage} /></label>
           <input value={text} onChange={e => setText(e.target.value)} placeholder={`Écrire dans #${channel}`} />
         </form>
       </main>
@@ -143,7 +231,7 @@ function Voice() {
     const screen = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
     r.current.screen = screen;
     r.current.room.addStream(screen);
-    screen.getVideoTracks()[0].onended = stopShare;   // bouton "Arrêter" du navigateur
+    screen.getVideoTracks()[0].onended = stopShare;
     setSharing(true);
   };
 
@@ -173,5 +261,5 @@ function Voice() {
       )}
     </div>
   );
-    }
-                                      
+}
+  
