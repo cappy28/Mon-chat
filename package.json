@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": { "dev": "vite", "build": "vite build" },
   "dependencies": {
+    "@sapphi-red/web-noise-suppressor": "0.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "trystero": "0.21",
