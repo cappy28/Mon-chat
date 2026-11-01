@@ -1,0 +1,65 @@
+/* Ruche · look de toute l'appli + profils + alerte de mise à jour */
+html.ruche {
+  --bg: #1a1622 !important; --side: #14111b !important; --dark: #0f0c15 !important;
+  --hover: #2a2337 !important; --input: #241e30 !important; --text: #f4effa !important;
+  --muted: #a99fba !important; --line: #2e2740 !important; --accent: #ffb627 !important;
+}
+html.ruche body { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif; }
+html.ruche ::selection { background: #ffb62755; }
+html.ruche * { scrollbar-width: thin; scrollbar-color: #3a3049 transparent; }
+html.ruche input, html.ruche textarea, html.ruche select { border-radius: 12px; }
+
+.lv-panel { width: 320px; }
+.lv-dtabs { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.lv-dtabs button {
+  flex: 1; border: 0; border-radius: 10px; padding: 7px; cursor: pointer;
+  background: var(--r-ink3); color: var(--r-txt);
+}
+.lv-dtabs button.on { background: var(--r-grad); color: var(--r-ink); font-weight: 700; }
+.lv-sub { display: block; font-size: 11px; color: var(--r-mut); overflow: hidden; text-overflow: ellipsis; }
+.lv-row .lv-face, .lv-row span { cursor: pointer; }
+
+.lv-veil {
+  position: fixed; inset: 0; z-index: 1002; display: grid; place-items: center;
+  padding: 16px; background: #0009;
+}
+.lv-card {
+  width: min(340px, 100%); padding-bottom: 14px; overflow: hidden; border-radius: 24px;
+  background: var(--r-ink2); color: var(--r-txt); box-shadow: 0 12px 50px #000c;
+}
+.lv-ban { position: relative; height: 100px; }
+.lv-card-av { width: max-content; margin: -48px 0 0 16px; border: 5px solid var(--r-ink2); border-radius: 34px; display: flex; }
+.lv-card h3 { margin: 8px 16px 0; }
+.lv-card h3 small { color: var(--r-mut); font-weight: 400; }
+.lv-card > p { margin: 6px 16px; }
+.lv-game { padding: 8px 10px; border-radius: 12px; background: var(--r-ink3); }
+.lv-bio { white-space: pre-wrap; word-break: break-word; }
+.lv-card-btns { display: flex; gap: 8px; padding: 0 16px; }
+
+.lv-me .lv-ban { height: 80px; border-radius: 16px; }
+.lv-me-av { position: absolute; left: 10px; bottom: -40px; display: flex; border: 4px solid var(--r-ink2); border-radius: 34px; }
+.lv-me-name { display: block; margin: 46px 0 8px; font-size: 17px; }
+.lv-me label { display: block; margin: 8px 0; font-size: 12px; color: var(--r-mut); }
+.lv-me input:not([type]), .lv-me textarea {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px 10px;
+  border: 0; border-radius: 10px; background: var(--r-ink3); color: var(--r-txt); font: inherit; resize: vertical;
+}
+.lv-bans { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.lv-bans button, .lv-me .lv-banup {
+  width: 38px; height: 26px; margin: 0; border: 0; border-radius: 8px; cursor: pointer;
+  outline: 2px solid transparent; outline-offset: 2px;
+}
+.lv-bans button.on { outline-color: var(--r-txt); }
+.lv-me .lv-banup { display: grid; place-items: center; background: var(--r-ink3); font-size: 13px; }
+.lv-me label.lv-check { color: var(--r-txt); font-size: 14px; }
+.lv-me textarea.lv-plan { font: 11px monospace; margin-top: 8px; }
+
+.lv-update {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1003;
+  display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 16px;
+  background: var(--r-grad); color: var(--r-ink); font-weight: 700; box-shadow: 0 6px 24px #0008;
+}
+.lv-update button, .lv-update a {
+  border: 0; border-radius: 10px; padding: 6px 10px; cursor: pointer; text-decoration: none;
+  background: var(--r-ink); color: var(--r-txt); font-weight: 700;
+}
