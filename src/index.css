@@ -1,35 +1,48 @@
 body { margin: 0; font-family: system-ui; background: #313338; color: #dbdee1; }
-.layout { display: grid; grid-template-columns: 220px 1fr 200px; height: 100vh; height: 100dvh; }
+.layout { display: grid; grid-template-columns: 240px 1fr 200px; height: 100vh; height: 100dvh; }
 .channels, .online { background: #2b2d31; padding: 12px; overflow-y: auto; }
-.ch { padding: 6px 8px; border-radius: 4px; cursor: pointer; }
-.ch:hover, .ch.active { background: #404249; }
+.channels h3 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; color: #949ba4; }
+.me { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #1f2023; }
+.ch { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 4px; cursor: pointer; color: #949ba4; }
+.ch:hover, .ch.active { background: #404249; color: #dbdee1; }
+.ch.unread { color: white; font-weight: 600; }
+.badge { background: #f23f42; color: white; border-radius: 10px; padding: 0 6px; font-size: 12px; font-weight: bold; }
 main { display: flex; flex-direction: column; min-height: 0; }
 main header { padding: 12px 16px; border-bottom: 1px solid #1f2023; font-weight: bold; }
 .messages { flex: 1; overflow-y: auto; padding: 16px; }
-.msg { padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.msg { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
 .msg:hover, .msg.sel { background: #2e3035; }
-.msg p { margin: 2px 0 8px; white-space: pre-wrap; word-break: break-word; }
+.body { flex: 1; min-width: 0; }
+.msg p { margin: 2px 0 6px; white-space: pre-wrap; word-break: break-word; }
 .msg small { color: #949ba4; }
-.pic { display: block; max-width: min(100%, 360px); max-height: 300px; border-radius: 8px; margin: 4px 0 8px; cursor: zoom-in; }
+.av { border-radius: 50%; flex-shrink: 0; object-fit: cover; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; transition: box-shadow .15s; }
+.av.talk { box-shadow: 0 0 0 3px #23a55a; }
+.pic { display: block; max-width: min(100%, 360px); max-height: 300px; border-radius: 8px; margin: 4px 0 6px; cursor: zoom-in; }
 .pic:fullscreen { max-width: none; max-height: none; object-fit: contain; background: black; }
+.file audio { display: block; max-width: 100%; margin: 4px 0; }
+.fbox { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 8px 10px; margin: 4px 0 6px; border-radius: 8px; background: #2b2d31; border: 1px solid #1f2023; }
+.fbox span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fbox button { width: auto; margin: 0; padding: 4px 10px; }
 .reacts { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .reacts span { padding: 1px 6px; border: 1px solid #3f4147; border-radius: 8px; background: #2b2d31; font-size: 13px; }
 .reacts span.mine { border-color: #5865f2; background: #373a6b; }
-.bar { display: flex; gap: 12px; font-size: 22px; margin: 4px 0 6px; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px; font-size: 22px; margin: 4px 0 6px; }
 .composer { display: flex; align-items: center; gap: 8px; margin: 0 16px 16px; }
 .composer input { flex: 1; min-width: 0; padding: 12px; border: none; border-radius: 8px; background: #383a40; color: white; font-size: 16px; }
 .attach { font-size: 24px; cursor: pointer; }
-button { margin-top: 8px; width: 100%; padding: 8px; border: none; border-radius: 4px; background: #5865f2; color: white; cursor: pointer; }
+button, .btn { display: block; box-sizing: border-box; margin-top: 8px; width: 100%; padding: 8px; border: none; border-radius: 4px; background: #5865f2; color: white; cursor: pointer; text-align: center; font: inherit; font-size: 14px; }
+.user, .vm { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
 .auth { display: flex; flex-direction: column; gap: 10px; width: 300px; margin: 15vh auto; }
 .auth input { padding: 10px; border-radius: 4px; border: none; background: #1e1f22; color: white; font-size: 16px; }
 .err { color: #f23f42; }
 
 /* Vocal et partage d'écran */
 .voice { margin-top: 16px; }
+.voice h3 { margin-bottom: 4px; }
 .voice video { width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; }
 .voice video:fullscreen { object-fit: contain; }
 
-/* Téléphone : salons et vocal en haut, messages en dessous */
+/* Téléphone : menu en haut, messages en dessous */
 @media (max-width: 700px) {
   .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .channels { max-height: 35dvh; }
