@@ -1,19 +1,46 @@
 name: Site web
+
 on:
-  push: { branches: [main] }
+  push:
+    branches: [main]
   workflow_dispatch:
-permissions: { contents: read, pages: write, id-token: write }
+  schedule:
+    - cron: '0 5 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
-  web:
+  build:
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
-    env: { VITE_ROOM_PASSWORD: "${{ secrets.ROOM_PASSWORD }}" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - run: npm install && npx vite build --base=/${{ github.event.repository.name }}/
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Sons du soundboard
+        run: node scripts/sons.mjs || echo "Sons ignorés"
+      - run: npx vite build --base=/${{ github.event.repository.name }}/
+        env:
+          VITE_ROOM_PASSWORD: ${{ secrets.ROOM_PASSWORD }}
       - uses: actions/upload-pages-artifact@v3
-        with: { path: dist }
-      - id: d
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
         uses: actions/deploy-pages@v4
+        
